@@ -9,9 +9,9 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This package implements the Spatio-Temporal Autoregressive Probit model introduced in [Franzese, Hays and Cook (2016)](https://www.cambridge.org/core/journals/political-science-research-and-methods/article/spatial-and-spatiotemporalautoregressive-probit-models-of-interdependent-binary-outcomes/1F3614552196A3506BBA42C42C03C061) (FHC). Estimation is based on a Recursive Importance Sampling (RIS) Maximum Simulated Likelihood (MSL) procedure. The code is loosely based on Franzese et al's Matlab replication materials, with some speed-ups (C++) and convenience functions added.
+This package implements the Spatio-Temporal Autoregressive Probit model introduced in [Franzese, Hays, and Cook (2016)](https://www.cambridge.org/core/journals/political-science-research-and-methods/article/spatial-and-spatiotemporalautoregressive-probit-models-of-interdependent-binary-outcomes/1F3614552196A3506BBA42C42C03C061) (FHC). Estimation is based on a Recursive Importance Sampling (RIS) Maximum Simulated Likelihood (MSL) procedure. The code is loosely based on Franzese et al.'s Matlab replication materials, with some speed-ups (C++) and convenience functions added.
 
-NOTE: This package is alrgely untested - proceed with caution.
+NOTE: This package is largely untested - proceed with caution.
 
 ## Usage
 
@@ -66,7 +66,7 @@ ris$coeftest()
 
 I cannot rule out completely that the problem lies with my implementation, but after playing around for a while, I'm fairly certain the RIS-MSL estimation strategy is the culprit.
 
-Another problem is that the RIS-based log-likelihood function does not seem to be well-behaved. Specifically, I frequently get varying results depending on the optimization algorithm employed (which shouldn't happen if the loss function was smooth and convex). Check out the following:
+Another problem is that the RIS-based log-likelihood function does not seem to be well-behaved. Specifically, I frequently get wildly varying results depending on the optimization algorithm employed (which wouldn't happen if the loss function was smooth and convex). Check out the following:
 
 ```{r example3}
 set.seed(0)
