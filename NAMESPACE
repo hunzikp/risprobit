@@ -1,0 +1,5 @@
+exportPattern("^[[:alpha:]]+")
+useDynLib(risprobit, .registration = TRUE)
+import(Matrix)
+import(Rcpp)
+import(R6)

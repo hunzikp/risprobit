@@ -1,0 +1,114 @@
+---
+title: "RIS Spatio-Temporal Probit"
+author: "Philipp Hunziker"
+date: "August 12, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This package implements the Spatio-Temporal Autoregressive Probit model introduced in [Franzese, Hays and Cook (2016)](https://www.cambridge.org/core/journals/political-science-research-and-methods/article/spatial-and-spatiotemporalautoregressive-probit-models-of-interdependent-binary-outcomes/1F3614552196A3506BBA42C42C03C061) (FHC). Estimation is based on a Recursive Importance Sampling (RIS) Maximum Simulated Likelihood (MSL) procedure. The code is loosely based on Franzese et al's Matlab replication materials, with some speed-ups (C++) and convenience functions added.
+
+NOTE: This package is alrgely untested - proceed with caution.
+
+## Usage
+
+Here's a short usage examples on simulated data similar to Experiment #1 in FHC. Note that the model is implemented as a stateful R6 class. 
+
+```{r example}
+library(risprobit)
+set.seed(0)
+
+## Set data specs
+N <- 7*7
+TT <- 5  # TT = 21 in FHC, but that takes forever
+
+## Set true params
+rho <- 0.1
+gamma <- 0.3
+beta <- c(-1.5, 3)
+
+## Simulate some data
+sim <- simulate_data(N, TT, rho, gamma, beta, X_params = c(-1, 2))
+X <- sim$X
+y <- sim$y
+W_t <- sim$W_t
+
+## Make model object, train
+ris <- RisSpatialProbit$new(X = X, y = y, W_t = W_t, N = N, TT = TT)
+ris$train()
+ris$coeftest()
+```
+
+## Notes on Identification and Estimation
+
+I noticed some odd behavior in cases where the regressors aren't very predictive of the outcome, and thus identification of the dependence parameters has to occur solely via the errors. Check out the following example:
+
+```{r example2}
+set.seed(0)
+
+## Set true params
+beta <- c(0, 0)  # X has no predictive value in true model
+
+## Simulate some data
+sim <- simulate_data(N, TT, rho, gamma, beta, X_params = c(-1, 2))
+X <- sim$X
+y <- sim$y
+W_t <- sim$W_t
+
+## Make model object, train
+ris <- RisSpatialProbit$new(X = X, y = y, W_t = W_t, N = N, TT = TT)
+ris$train()
+ris$coeftest()
+```
+
+I cannot rule out completely that the problem lies with my implementation, but after playing around for a while, I'm fairly certain the RIS-MSL estimation strategy is the culprit.
+
+Another problem is that the RIS-based log-likelihood function does not seem to be well-behaved. Specifically, I frequently get varying results depending on the optimization algorithm employed (which shouldn't happen if the loss function was smooth and convex). Check out the following:
+
+```{r example3}
+set.seed(0)
+
+## Set data specs
+N <- 7*7
+TT <- 2
+
+## Set true params
+rho <- 0.1
+gamma <- 0.3
+beta <- c(0, 0)
+
+## Simulate some data
+sim <- simulate_data(N, TT, rho, gamma, beta, X_params = c(-1, 2))
+X <- sim$X
+y <- sim$y
+W_t <- sim$W_t
+
+## Train with optim Nelder-Mead (default)
+ris <- RisSpatialProbit$new(X = X, y = y, W_t = W_t, N = N, TT = TT)
+cat('\nNelder-Mead:', fill = TRUE)
+ll <- ris$train()
+cat('ll:', round(ll, 3), fill = TRUE)
+ris$coeftest()
+
+## Train with optim BFGS
+ris <- RisSpatialProbit$new(X = X, y = y, W_t = W_t, N = N, TT = TT)
+cat('\nBFGS:', fill = TRUE)
+ll <- ris$train(method = 'BFGS')
+cat('ll:', round(ll, 3), fill = TRUE)
+ris$coeftest()
+
+## Train with nloptr newuoa
+ris <- RisSpatialProbit$new(X = X, y = y, W_t = W_t, N = N, TT = TT)
+cat('\nNEWUOA:', fill = TRUE)
+ll <- ris$train(method = 'newuoa')
+cat('ll:', round(ll, 3), fill = TRUE)
+ris$coeftest()
+```
+
+
+
+
+
